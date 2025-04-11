@@ -105,6 +105,28 @@ def create_backup(backup_path, postgresql_path):
     print("Backup successfully made!")
 
 
+def remove_postgres(os_type):
+    if os_type == "ubuntu":
+        run_cli(["sudo", "systemctl", "stop", "postgresql"])
+        run_cli(["sudo", "apt", "--purge", "remove", "postgresql\*", "-y"])
+        run_cli(["sudo", "apt", "autoremove", "y"])
+        run_cli(["sudo", "apt", "autoclean"])
+        run_cli(["sudo", "rm", "-rf", "/etc/postgresql"])
+        run_cli(["sudo", "rm", "-rf", "/var/lib/postgresql"])
+        run_cli(["sudo", "rm", "-rf", "/var/log/postgresql"])
+        run_cli(["sudo", "rm", "-rf", "/etc/postgresql-common"])
+        run_cli(["sudo", "deluser", "postgres"])
+        run_cli(["sudo", "delgroup", "postgres"])
+    elif os_type == "centos":
+        run_cli(["sudo", "systemctl", "stop", "postgresql*"])
+        run_cli(["sudo", "yum", "-y", "remove", "postgresql*"])
+        run_cli(["sudo", "rm", "-rf", "/var/lib/pgsql"])
+        run_cli(["sudo", "rm", "-rf", "/var/log/pgsql"])
+        run_cli(["sudo", "rm", "-rf", "/etc/init.d/postgresql*"])
+        run_cli(["sudo", "userdel", "postgres"])
+        run_cli(["sudo", "groupdel", "postgres"])
+
+
 def main():
     # Check OS system and set values accordingly
     os_type = get_os_info()
@@ -126,6 +148,10 @@ def main():
             print(f"Installation failed: {e}")
             sys.exit(1)
 
+
+    if not os.path.exists("/etc/postgresql"):
+        remove_postgres(os_type)
+
     # Ask if user wants to create a backup file
     answer = input("Would you like to add a backup file? Currently there is none listed. (y/n) ").strip().lower()
     # If they want a backup file (new or changed), create file if needed, then create backup and write path to file
@@ -144,3 +170,7 @@ def main():
         else:
             print("Finish setting up postgresql config files before making a backup.")
             return
+        
+        
+if __name__ == '__main__':
+    main()
