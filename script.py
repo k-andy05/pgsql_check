@@ -104,6 +104,9 @@ def check_hashes(backup_raw, postgresql_raw):
             run_cli(["sudo", "rsync", "-a", f"{backup_raw}/", "/etc/postgresql/"])
         else:
             run_cli(["sudo", "rsync", "-a", f"{backup_raw}", "/etc/"])
+        if os.path.exists("/etc/blueteam"):
+            run_cli(["sudo", "mv" "/etc/blueteam/postgresql", "/etc/postgresql"])
+            run_cli(["sudo", "rm", "-r", "/etc/blueteam"])
         print("Backup successfully copied over!")
 
 
