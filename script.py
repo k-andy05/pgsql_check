@@ -3,6 +3,7 @@
 import os
 import subprocess
 import hashlib
+import shutil
 import sys
 from pathlib import Path
 
@@ -13,7 +14,7 @@ def get_os_info():
         return "centos"
     elif os.path.exists("/etc/os-release"):
         with open("/etc/os-release", "r") as f:
-            os_file = f.read()
+            os_file = f.readline()
             if "Ubuntu" in os_file:
                 return "ubuntu"
     return None
@@ -21,8 +22,9 @@ def get_os_info():
 
 # Self-explanatory function
 def is_postgresql_installed():
-    result = subprocess.run(['psql', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode == 0:
+    result = shutil.which("psql")
+    if result:
+        print("Postgresql is on device.")
         return True
     else:
         print(f"Postgresql is not found on device.")
@@ -71,15 +73,29 @@ def hash_dir(file_path_):
             hash_obj.update(str(Path(root).relative_to(path)).encode())
     return hash_obj.hexdigest()
 
+def get_suffix(path_str):
+    path = Path(path_str).resolve()
+    parts = path.parts
+    if "postgresql" in parts:
+        index = parts.index("postgresql")
+        trimmed = Path(*parts[index:])
+        return trimmed
+    else:
+        return path
+
 
 # Checks hashes between two directories
-def check_hashes(backup, postgresql):
+def check_hashes(backup_raw, postgresql_raw):
+    # I need to just get it from postgresql downwards
+    backup = get_suffix(backup_raw)
+    postgresql = get_suffix(postgresql_raw)
     print("Checking hashes...")
     backup_hexdigest = hash_dir(backup)
     postgresql_hexdigest = hash_dir(postgresql)
     if backup_hexdigest != postgresql_hexdigest:
         print("A postgresql file has been tampered with! Restoring from backup now...")
-        run_cli(["sudo", "rsync", "-a", f"{backup}", f"{postgresql}"])
+        run_cli(["sudo", "rsync", "-a", f"{backup_raw}", "/etc/"])
+        print("Backup succesfully copied over!")
 
 
 # Creates a backup of a directory
@@ -90,9 +106,6 @@ def create_backup(backup_path, postgresql_path):
 
 
 def main():
-    if os.geteuid() != 0:
-    print("This script must be run as root.")
-    sys.exit(1)
     # Check OS system and set values accordingly
     os_type = get_os_info()
     if not os_type:
