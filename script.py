@@ -44,8 +44,14 @@ def run_cli(command_array):
 # Self-explanatory function
 def install_postgresql(specific_os):
     if specific_os == "ubuntu":
+        run_cli(["sudo", "adduser", "--system", "--home", "/var/lib/postgresql", "--shell", "/bin/bash", "postgres"])
+        run_cli(["sudo", "addgroup", "--system", "postgres"])
+        run_cli(["sudo", "usermod", "-aG", "postgres", "postgres"])
+        run_cli(["sudo", "mkdir", "-p", "/var/lib/postgresql"])
+        run_cli(["sudo", "chown", "postgres:postgres", "/var/lib/postgresql"])
         run_cli(["sudo", "apt", "update"])
         run_cli(["sudo", "apt", "-y", "install", "postgresql"])
+        run_cli(["sudo", "pg_createcluster", "12", "main", "--start"])
     else:
         version = input("What version of postgresql do you want to install?: ")
         run_cli(["sudo", "yum", "-y", "install", "https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"])
@@ -202,6 +208,8 @@ def main():
 
     if not os.path.exists("/etc/postgresql"):
         remove_postgres(os_type)
+        install_postgresql(os_type)
+        print("Installation of postgresql is successful!")
 
     # Ask if user wants to create a backup file
     answer = input("Would you like to add a backup file? Currently there is none listed. (y/n) ").strip().lower()
