@@ -6,7 +6,14 @@ import hashlib
 import shutil
 import sys
 from pathlib import Path
+import logging
 
+LOG_PATH = "/var/log/pgsql_watchdog.log"
+logging.basicConfig(
+    filename=LOG_PATH,
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
 
 # Find OS type
 def get_os_info():
@@ -24,17 +31,17 @@ def get_os_info():
 def is_postgresql_installed():
     result = shutil.which("psql")
     if result:
-        print("Postgresql is on device.")
+        logging.info("Postgresql is on device.")
         return True
     else:
-        print(f"Postgresql is not found on device.")
+        logging.error(f"Postgresql is not found on device.")
         return False
 
 
 # Will try and execute CLI input as an array of separate words
 def run_cli(command_array):
     try:
-        print(f"Running {' '.join(command_array)}...")
+        logging.info(f"Running {' '.join(command_array)}...")
         subprocess.run(command_array, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Command failed: {e}")
@@ -44,7 +51,7 @@ def run_cli(command_array):
 # Self-explanatory function
 def install_postgresql(specific_os):
     if specific_os == "ubuntu":
-        run_cli(["sudo", "adduser", "--system", "--home", "/var/sudo alib/postgresql", "--shell", "/bin/bash", "postgres"])
+        run_cli(["sudo", "adduser", "--system", "--home", "/var/lib/postgresql", "--shell", "/bin/bash", "postgres"])
         run_cli(["sudo", "addgroup", "--system", "postgres"])
         run_cli(["sudo", "usermod", "-aG", "postgres", "postgres"])
         run_cli(["sudo", "mkdir", "-p", "/var/lib/postgresql"])
@@ -99,22 +106,22 @@ def check_hashes(backup_raw, postgresql_raw):
     backup_hexdigest = hash_dir(backup)
     postgresql_hexdigest = hash_dir(postgresql)
     if backup_hexdigest != postgresql_hexdigest:
-        print("A postgresql file has been tampered with! Restoring from backup now...")
+        logging.info("A postgresql file has been tampered with! Restoring from backup now...")
         if os.path.exists("/etc/postgresql"):
             run_cli(["sudo", "rsync", "-a", f"{backup_raw}/", "/etc/postgresql/"])
         else:
             run_cli(["sudo", "rsync", "-a", f"{backup_raw}", "/etc/"])
         if os.path.exists("/etc/blueteam"):
-            run_cli(["sudo", "mv" "/etc/blueteam/postgresql", "/etc/postgresql"])
+            run_cli(["sudo", "mv", "/etc/blueteam/postgresql", "/etc/postgresql"])
             run_cli(["sudo", "rm", "-r", "/etc/blueteam"])
-        print("Backup successfully copied over!")
+        logging.info("Backup successfully copied over!")
 
 
 # Creates a backup of a directory
 def create_backup(backup_path, postgresql_path):
     print(f"Creating backup at {backup_path}...")
     run_cli(["sudo", "rsync", "-a", f"{postgresql_path}", f"{backup_path}"])
-    print("Backup successfully made!")
+    logging.info("Backup successfully made!")
 
 
 def remove_postgres(os_type):
@@ -191,6 +198,10 @@ def remove_postgres(os_type):
 
 
 def main():
+    # make sure user is root level
+    if os.geteuid() != 0:
+    print("This script must be run as root. Exiting.")
+    sys.exit(1)
     # Check OS system and set values accordingly
     os_type = get_os_info()
     if not os_type:
@@ -208,7 +219,7 @@ def main():
             print("Installation of postgresql is successful!")
             return
         except subprocess.CalledProcessError as e:
-            print(f"Installation failed: {e}")
+            logging.error(f"Installation failed: {e}")
             sys.exit(1)
 
 
