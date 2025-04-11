@@ -44,7 +44,7 @@ def run_cli(command_array):
 # Self-explanatory function
 def install_postgresql(specific_os):
     if specific_os == "ubuntu":
-        run_cli(["sudo", "adduser", "--system", "--home", "/var/lib/postgresql", "--shell", "/bin/bash", "postgres"])
+        run_cli(["sudo", "adduser", "--system", "--home", "/var/sudo alib/postgresql", "--shell", "/bin/bash", "postgres"])
         run_cli(["sudo", "addgroup", "--system", "postgres"])
         run_cli(["sudo", "usermod", "-aG", "postgres", "postgres"])
         run_cli(["sudo", "mkdir", "-p", "/var/lib/postgresql"])
@@ -100,8 +100,11 @@ def check_hashes(backup_raw, postgresql_raw):
     postgresql_hexdigest = hash_dir(postgresql)
     if backup_hexdigest != postgresql_hexdigest:
         print("A postgresql file has been tampered with! Restoring from backup now...")
-        run_cli(["sudo", "rsync", "-a", f"{backup_raw}", "/etc/"])
-        print("Backup succesfully copied over!")
+        if os.path.exists("/etc/postgresql"):
+            run_cli(["sudo", "rsync", "-a", f"{backup_raw}/", "/etc/postgresql/"])
+        else:
+            run_cli(["sudo", "rsync", "-a", f"{backup_raw}", "/etc/"])
+        print("Backup successfully copied over!")
 
 
 # Creates a backup of a directory
