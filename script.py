@@ -90,6 +90,9 @@ def create_backup(backup_path, postgresql_path):
 
 
 def main():
+    if os.geteuid() != 0:
+    print("This script must be run as root.")
+    sys.exit(1)
     # Check OS system and set values accordingly
     os_type = get_os_info()
     if not os_type:
