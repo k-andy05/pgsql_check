@@ -131,11 +131,11 @@ def remove_postgres(os_type):
         except Exception as e:
             pass
         try:
-            run_cli(["sudo", "apt", "--purge", "remove", "postgresql\*", "-y"])
+            run_cli(["sudo", "apt", "--purge", "remove", "postgresql", "-y"])
         except Exception as e:
             pass
         try:
-            run_cli(["sudo", "apt", "autoremove", "y"])
+            run_cli(["sudo", "apt", "autoremove", "-y"])
         except Exception as e:
             pass
         try:
@@ -156,14 +156,6 @@ def remove_postgres(os_type):
             pass
         try:
             run_cli(["sudo", "rm", "-rf", "/etc/postgresql-common"])
-        except Exception as e:
-            pass
-        try:
-            run_cli(["sudo", "deluser", "postgres"])
-        except Exception as e:
-            pass
-        try:
-            run_cli(["sudo", "delgroup", "postgres"])
         except Exception as e:
             pass
     elif os_type == "centos":
@@ -187,21 +179,13 @@ def remove_postgres(os_type):
             run_cli(["sudo", "rm", "-rf", "/etc/init.d/postgresql*"])
         except Exception as e:
             pass
-        try:
-            run_cli(["sudo", "userdel", "postgres"])
-        except Exception as e:
-            pass
-        try:
-            run_cli(["sudo", "groupdel", "postgres"])
-        except Exception as e:
-            pass
 
 
 def main():
     # make sure user is root level
     if os.geteuid() != 0:
-    print("This script must be run as root. Exiting.")
-    sys.exit(1)
+        print("This script must be run as root. Exiting.")
+        sys.exit(1)
     # Check OS system and set values accordingly
     os_type = get_os_info()
     if not os_type:
