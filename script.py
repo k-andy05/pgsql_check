@@ -79,9 +79,13 @@ def hash_dir(file_path_):
             file_path = Path(root) / name
             rel_path = file_path.relative_to(path)
             hash_obj.update(str(rel_path).encode())
-            with open(file_path, 'rb') as f:
-                while chunk := f.read(65536):
-                    hash_obj.update(chunk)
+            try:
+                with open(file_path, 'rb') as f:
+                    while chunk := f.read(65536):
+                        hash_obj.update(chunk)
+            except FileNotFoundError:
+                logging.warning(f"File missing during hashing: {file_path}")
+                continue
         if not files and not dirs:
             hash_obj.update(str(Path(root).relative_to(path)).encode())
     return hash_obj.hexdigest()
@@ -213,7 +217,7 @@ def main():
         print("Installation of postgresql is successful!")
 
     # Ask if user wants to create a backup file
-    answer = input("Would you like to add a backup file? Currently there is none listed. (y/n) ").strip().lower()
+    answer = input("Would you like to add a backup file? (y/n) ").strip().lower()
     # If they want a backup file (new or changed), create file if needed, then create backup and write path to file
     if answer == "y":
         backup_path = input("Path to backup: ")
